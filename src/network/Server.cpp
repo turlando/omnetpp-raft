@@ -7,6 +7,7 @@
 
 #include "../raft/Server.hpp"
 
+const float startupElectionMinTimeout = 0.15; // 150 ms
 const float startupElectionMaxTimeout = 0.30; // 300 ms
 
 const float pingTimeout     = 0.05; // 50 ms
@@ -67,7 +68,8 @@ void Server::broadcast(std::function<omnetpp::cMessage* (void)> mkMsg) {
 }
 
 void Server::initialize() {
-    scheduleAfter(uniform(0.0, startupElectionMaxTimeout), new InternalElectionTimeout());
+    scheduleAfter(uniform(startupElectionMinTimeout, startupElectionMaxTimeout),
+                  new InternalElectionTimeout());
 }
 
 void Server::handleMessage(omnetpp::cMessage *msg) {

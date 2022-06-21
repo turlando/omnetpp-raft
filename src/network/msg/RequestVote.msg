@@ -1,0 +1,3 @@
+message RequestVote {
+    int term;
+}

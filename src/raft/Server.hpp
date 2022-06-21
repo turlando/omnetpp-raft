@@ -14,6 +14,7 @@ class Server {
         int              term;
 
         void broadcast(Message);
+        void election();
 
     public:
         Server(GetServerId getServerId, GetServers getServers, SendMessage sendMessage)

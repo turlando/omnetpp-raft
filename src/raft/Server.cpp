@@ -7,4 +7,8 @@ void Server::broadcast(Message message) {
         sendMessage(server, message);
 }
 
+void Server::election() {
+    broadcast(RequestVote(term));
+}
+
 }
