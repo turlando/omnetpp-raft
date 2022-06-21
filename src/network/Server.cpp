@@ -25,8 +25,9 @@ class Server : public omnetpp::cSimpleModule {
 
     public:
         Server()
-            : raftServer(
-                getIndex(),
+            : omnetpp::cSimpleModule()
+            , raftServer(
+                [&]() { return getIndex(); },
                 [&]() { return getServers(); },
                 [&](int id, raft::Message msg) { send(raftMessageToOmnetMessage(msg), gateForNode(id)); }
             )
@@ -34,8 +35,6 @@ class Server : public omnetpp::cSimpleModule {
 };
 
 Define_Module(Server);
-
-
 
 omnetpp::cGate *Server::gateForNode(int id) {
     if (id == getIndex())

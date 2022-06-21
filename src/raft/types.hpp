@@ -9,13 +9,17 @@
 
 namespace raft {
 
+using MonotonicClock   = std::chrono::steady_clock;
+
 using ServerId         = int;
 using Term             = int;
-using SendMessage      = std::function<void (ServerId, Message)>;
-using MonotonicClock   = std::chrono::steady_clock;
-using ServerHeartbeats = std::map<ServerId, MonotonicClock>;
+
 using Servers          = std::set<ServerId>;
+using ServerHeartbeats = std::map<ServerId, MonotonicClock>;
+
+using GetServerId      = std::function<ServerId (void)>;
 using GetServers       = std::function<Servers (void)>;
+using SendMessage      = std::function<void (ServerId, Message)>;
 
 enum ServerState {
     Follower,

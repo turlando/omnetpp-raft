@@ -6,18 +6,18 @@ namespace raft {
 
 class Server {
     private:
-        ServerId    id;
-        GetServers  getServers;
-        SendMessage sendMessage;
+        const GetServerId getServerId;
+        const GetServers  getServers;
+        const SendMessage sendMessage;
 
         enum ServerState state;
         int              term;
 
-        void sendToAllServers(Message);
+        void broadcast(Message);
 
     public:
-        Server(ServerId id, GetServers getServers, SendMessage sendMessage)
-            : id(id)
+        Server(GetServerId getServerId, GetServers getServers, SendMessage sendMessage)
+            : getServerId(getServerId)
             , getServers(getServers)
             , sendMessage(sendMessage)
             , state(Follower)
