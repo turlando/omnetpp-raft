@@ -15,5 +15,12 @@ using SendMessage      = std::function<void (ServerId, Message)>;
 using MonotonicClock   = std::chrono::steady_clock;
 using ServerHeartbeats = std::map<ServerId, MonotonicClock>;
 using Servers          = std::set<ServerId>;
+using GetServers       = std::function<Servers (void)>;
+
+enum ServerState {
+    Follower,
+    Candidate,
+    Leader
+};
 
 }
