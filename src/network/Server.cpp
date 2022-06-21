@@ -55,7 +55,8 @@ raft::Servers Server::getServers() {
     raft::Servers s;
     for (omnetpp::cModule::GateIterator i(this); !i.end(); i++) {
         int nodeId = (*i)->getPathEndGate()->getOwnerModule()->getIndex();
-        s.insert(nodeId);
+        if (nodeId != getIndex())
+            s.insert(nodeId);
     }
     return s;
 }
@@ -75,7 +76,7 @@ void Server::initialize() {
 void Server::handleMessage(omnetpp::cMessage *msg) {
     InternalElectionTimeout *iet = dynamic_cast<InternalElectionTimeout*>(msg);
     if (iet != nullptr) {
-        //election(raftConfiguration, raftState);
+        raftServer.election();
         return;
     }
 }
