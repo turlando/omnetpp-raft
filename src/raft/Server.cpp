@@ -2,7 +2,7 @@
 
 namespace raft {
 
-void Server::sendToAllServers(Message message) {
+void Server::broadcast(Message message) {
     for (auto server : getServers())
         sendMessage(server, message);
 }
