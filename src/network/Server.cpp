@@ -79,4 +79,7 @@ void Server::handleMessage(omnetpp::cMessage *msg) {
         raftServer.election();
         return;
     }
+
+    raft::Message m = omnetMessageToRaftMessage(msg);
+    raftServer.handleMessage(msg->getSenderGate()->getOwnerModule()->getIndex(), m);
 }

@@ -1,31 +1,38 @@
 #pragma once
 
+#include <optional>
 #include "types.hpp"
 
 namespace raft {
 
 class Server {
     private:
-        const GetServerId getServerId;
+        const GetServerId getId;
         const GetServers  getServers;
-        const SendMessage sendMessage;
+        const SendMessage send;
 
-        enum ServerState state;
-        int              term;
+        enum ServerState        state;
+        Term                    term;
+        std::optional<ServerId> votedCandidate;
+        int                     receivedVotes;
 
         void broadcast(Message);
+        int requiredVotesToBeLeader();
 
 
     public:
-        Server(GetServerId getServerId, GetServers getServers, SendMessage sendMessage)
-            : getServerId(getServerId)
+        Server(GetServerId getId, GetServers getServers, SendMessage sendMessage)
+            : getId(getId)
             , getServers(getServers)
-            , sendMessage(sendMessage)
+            , send(sendMessage)
             , state(Follower)
             , term(0)
+            , votedCandidate(std::nullopt)
+            , receivedVotes(0)
         {};
 
         void election();
+        void handleMessage(ServerId from, Message message);
 };
 
 }

@@ -14,8 +14,14 @@ struct RequestVote {
     {};
 };
 
-struct RequestVoteReply {};
+struct RequestVoteReply {
+    bool agree; // true = voted for sender
 
-using Message = std::variant<Heartbeat, RequestVote>;
+    RequestVoteReply(bool agree)
+        : agree(agree)
+    {};
+};
+
+using Message = std::variant<Heartbeat, RequestVote, RequestVoteReply>;
 
 }

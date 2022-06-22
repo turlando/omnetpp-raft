@@ -1,0 +1,3 @@
+message RequestVoteReply {
+    bool agree;
+}
