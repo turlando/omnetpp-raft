@@ -16,16 +16,25 @@ void Server::handleMessage(ServerId from, Message message) {
         },
 
         [&](RequestVote& msg) {
+            // I wish this condition was present in the paper...
             if (role != Follower) {
                 send(from, RequestVoteReply(term, false));
                 return;
             }
 
-            if (msg.term < term || votedCandidate.has_value() == true) {
+            if (msg.term < term) {
                 send(from, RequestVoteReply(term, false));
-            } else {
+                return;
+            }
+
+            if (votedCandidate.has_value() == false) {
                 votedCandidate = from;
                 send(from, RequestVoteReply(term, true));
+            }
+
+            if (votedCandidate.has_value() == true && votedCandidate.value() == from) {
+                send(from, RequestVoteReply(term, true));
+                return;
             }
         },
 
