@@ -21,6 +21,7 @@ omnetpp::cMessage *raftMessageToOmnetMessage(raft::Message message) {
 
         [](raft::RequestVoteReply& x) -> omnetpp::cMessage* {
             auto m = new RequestVoteReply();
+            m->setTerm(x.term);
             m->setAgree(x.agree);
             return m;
         }
@@ -46,7 +47,7 @@ raft::Message omnetMessageToRaftMessage(omnetpp::cMessage *message) {
     {
         RequestVoteReply *m = dynamic_cast<RequestVoteReply*>(message);
         if (m != nullptr)
-            return raft::RequestVoteReply(m->getAgree());
+            return raft::RequestVoteReply(m->getTerm(), m->getAgree());
     }
 
     throw omnetpp::cRuntimeError("Unable to convert Omnet++ message to Raft message");

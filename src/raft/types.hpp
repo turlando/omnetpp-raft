@@ -8,18 +8,17 @@
 
 namespace raft {
 
-using Time             = std::chrono::time_point<std::chrono::steady_clock>;
+using Time    = std::chrono::milliseconds;
+using GetTime = std::function<Time (void)>;
 
-using ServerId         = int;
-using Term             = int;
+using ServerId = int;
+using Term     = int;
+using Servers  = std::set<ServerId>;
 
-using Servers          = std::set<ServerId>;
-using ServerHeartbeats = std::map<ServerId, Time>;
+using GetServerId = std::function<ServerId (void)>;
+using GetServers  = std::function<Servers (void)>;
 
-using GetServerId      = std::function<ServerId (void)>;
-using GetServers       = std::function<Servers (void)>;
-
-enum ServerState {
+enum Role {
     Follower,
     Candidate,
     Leader
@@ -42,10 +41,12 @@ struct RequestVote {
 };
 
 struct RequestVoteReply {
+    Term term;
     bool agree; // true = voted for sender
 
-    RequestVoteReply(bool agree)
-        : agree(agree)
+    RequestVoteReply(Term term, bool agree)
+        : term(term)
+        , agree(agree)
     {};
 };
 
