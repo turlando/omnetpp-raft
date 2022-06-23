@@ -21,16 +21,33 @@ int Server::requiredVotesToBeLeader() {
     return (getServers().size() + 1) / 2;
 }
 
+// this must only be called once every ELECTION_TIMEOUT
+void Server::maybeElection() {
+    // if last communication from leader has happened during election timeout
+    // then start new election.
+    // if election is in progress (state == Candidate) and no leader has been
+    // chosen during election timeout then start a new election.
+    if (state != Leader && now() - lastHeartbeatTime > HEARTBEAT_TIMEOUT)
+        election();
+}
+
+void Server::maybeHeartbeat() {
+    if (state == Leader)
+        broadcast(Heartbeat(term));
+}
+
 void Server::handleMessage(ServerId from, Message message) {
     std::visit(match {
-        [&](Heartbeat& x) {
-            if (state == Candidate && from == votedCandidate) {
+        [&](Heartbeat& msg) {
+            lastHeartbeatTime = now();
+
+            if (state == Candidate && msg.term >= term) {
                 state = Follower;
             }
         },
 
-        [&](RequestVote& x) {
-            if (x.term < term) {
+        [&](RequestVote& msg) {
+            if (msg.term < term) {
                 send(from, RequestVoteReply(false));
                 return;
             }
@@ -52,13 +69,13 @@ void Server::handleMessage(ServerId from, Message message) {
             }
         },
 
-        [&](RequestVoteReply& x) {
-            if (x.agree == true)
+        [&](RequestVoteReply& msg) {
+            if (msg.agree == true)
                 receivedVotes += 1;
 
-            if (receivedVotes >= requiredVotesToBeLeader()) {
+            if (state != Leader && receivedVotes >= requiredVotesToBeLeader()) {
                 state = Leader;
-                broadcast(Heartbeat(term));
+                // start broadcasting heartbeats
             }
         }
     }, message);

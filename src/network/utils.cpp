@@ -26,6 +26,8 @@ omnetpp::cMessage *raftMessageToOmnetMessage(raft::Message message) {
             return m;
         }
     }, message);
+
+    throw omnetpp::cRuntimeError("Unable to convert Raft message to Omnet++ message");
 }
 
 

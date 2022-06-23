@@ -5,6 +5,8 @@
 
 namespace raft {
 
+const std::chrono::milliseconds HEARTBEAT_TIMEOUT = std::chrono::milliseconds(50);
+
 class Server {
     private:
         const GetServerId getId;
@@ -13,12 +15,13 @@ class Server {
 
         enum ServerState        state;
         Term                    term;
+        Time                    lastHeartbeatTime;
         std::optional<ServerId> votedCandidate;
         int                     receivedVotes;
 
         void broadcast(Message);
         int requiredVotesToBeLeader();
-
+        void election();
 
     public:
         Server(GetServerId getId, GetServers getServers, SendMessage sendMessage)
@@ -27,11 +30,13 @@ class Server {
             , send(sendMessage)
             , state(Follower)
             , term(0)
+            , lastHeartbeatTime() // initialized to epoch
             , votedCandidate(std::nullopt)
             , receivedVotes(0)
         {};
 
-        void election();
+        void maybeElection();
+        void maybeHeartbeat();
         void handleMessage(ServerId from, Message message);
 };
 

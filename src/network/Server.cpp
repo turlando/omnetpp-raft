@@ -4,14 +4,13 @@
 #include "utils.hpp"
 #include "msg/Heartbeat_m.h"
 #include "msg/InternalElectionTimeout_m.h"
+#include "msg/InternalHeartbeatTimeout_m.h"
 
 #include "../raft/Server.hpp"
 
 const float startupElectionMinTimeout = 0.15; // 150 ms
 const float startupElectionMaxTimeout = 0.30; // 300 ms
-
-const float pingTimeout     = 0.05; // 50 ms
-const float electionTimeout = 0.30; // 300 ms
+const float heartbeatTimeout          = 0.05; // 50 ms
 
 class Server : public omnetpp::cSimpleModule {
     private:
@@ -71,17 +70,22 @@ void Server::broadcast(std::function<omnetpp::cMessage* (void)> mkMsg) {
 void Server::initialize() {
     scheduleAfter(uniform(startupElectionMinTimeout, startupElectionMaxTimeout),
                   new InternalElectionTimeout());
+    scheduleAfter(heartbeatTimeout, new InternalHeartbeatTimeout());
 }
 
 void Server::handleMessage(omnetpp::cMessage *msg) {
     InternalElectionTimeout *iet = dynamic_cast<InternalElectionTimeout*>(msg);
     if (iet != nullptr) {
-        // TODO: check if last communication from leader has happened during election timeout
-        //       if so, start new election and schedule new election timeout
-        // TODO: check if election is in progress and no leader has been chosen yet
-        //       if so, start new election and schedule new election timeout
-        // TODO: otherwise, do nothing
-        raftServer.election();
+        raftServer.maybeElection();
+        scheduleAfter(uniform(startupElectionMinTimeout, startupElectionMaxTimeout),
+                      new InternalElectionTimeout());
+        return;
+    }
+
+    InternalHeartbeatTimeout *iht = dynamic_cast<InternalHeartbeatTimeout*>(msg);
+    if (iht != nullptr) {
+        raftServer.maybeHeartbeat();
+        scheduleAfter(heartbeatTimeout, new InternalHeartbeatTimeout());
         return;
     }
 
