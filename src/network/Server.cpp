@@ -76,6 +76,11 @@ void Server::initialize() {
 void Server::handleMessage(omnetpp::cMessage *msg) {
     InternalElectionTimeout *iet = dynamic_cast<InternalElectionTimeout*>(msg);
     if (iet != nullptr) {
+        // TODO: check if last communication from leader has happened during election timeout
+        //       if so, start new election and schedule new election timeout
+        // TODO: check if election is in progress and no leader has been chosen yet
+        //       if so, start new election and schedule new election timeout
+        // TODO: otherwise, do nothing
         raftServer.election();
         return;
     }

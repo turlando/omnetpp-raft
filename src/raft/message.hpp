@@ -4,7 +4,13 @@
 
 namespace raft {
 
-struct Heartbeat {};
+struct Heartbeat {
+    int term;
+
+    Heartbeat(int term)
+        : term(term)
+    {}
+};
 
 struct RequestVote {
     int term;

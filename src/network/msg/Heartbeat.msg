@@ -1,2 +1,3 @@
 message Heartbeat {
+    int term;
 }

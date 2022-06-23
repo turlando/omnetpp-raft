@@ -10,15 +10,15 @@ void Server::broadcast(Message message) {
 }
 
 void Server::election() {
-    term         += 1;
-    state         = Candidate;
-    receivedVotes = 1; // voting for itself
+    term          += 1;
+    state          = Candidate;
+    receivedVotes  = 1; // voting for itself
     votedCandidate = getId();
     broadcast(RequestVote(term));
 }
 
 int Server::requiredVotesToBeLeader() {
-    return (getServers().size() - 1) / 2;
+    return (getServers().size() + 1) / 2;
 }
 
 void Server::handleMessage(ServerId from, Message message) {
@@ -58,7 +58,7 @@ void Server::handleMessage(ServerId from, Message message) {
 
             if (receivedVotes >= requiredVotesToBeLeader()) {
                 state = Leader;
-                broadcast(Heartbeat());
+                broadcast(Heartbeat(term));
             }
         }
     }, message);

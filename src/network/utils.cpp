@@ -8,7 +8,11 @@
 
 omnetpp::cMessage *raftMessageToOmnetMessage(raft::Message message) {
     return std::visit(match {
-        [](raft::Heartbeat& x) -> omnetpp::cMessage* { return new Heartbeat(); },
+        [](raft::Heartbeat& x) -> omnetpp::cMessage* {
+            auto m = new Heartbeat();
+            m->setTerm(x.term);
+            return m;
+        },
 
         [](raft::RequestVote& x) -> omnetpp::cMessage* {
             auto m = new RequestVote();
@@ -29,7 +33,7 @@ raft::Message omnetMessageToRaftMessage(omnetpp::cMessage *message) {
     {
         Heartbeat *m = dynamic_cast<Heartbeat*>(message);
         if (m != nullptr)
-            return raft::Heartbeat();
+            return raft::Heartbeat(m->getTerm());
     }
 
     {
