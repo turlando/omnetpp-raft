@@ -1,7 +1,6 @@
 #include "utils.hpp"
 
 #include "../utils.hpp"
-#include "../raft/message.hpp"
 #include "msg/Heartbeat_m.h"
 #include "msg/RequestVote_m.h"
 #include "msg/RequestVoteReply_m.h"
