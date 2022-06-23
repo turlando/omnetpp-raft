@@ -19,8 +19,8 @@ class Server {
         std::optional<ServerId> votedCandidate;
         int                     receivedVotes;
 
-        void broadcast(Message);
         int requiredVotesToBeLeader();
+        void broadcast(Message);
         void election();
 
     public:
@@ -35,9 +35,9 @@ class Server {
             , receivedVotes(0)
         {};
 
+        void handleMessage(ServerId from, Message message);
         void maybeElection();
         void maybeHeartbeat();
-        void handleMessage(ServerId from, Message message);
 };
 
 }
