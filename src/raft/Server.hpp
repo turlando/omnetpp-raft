@@ -22,6 +22,7 @@ class Server {
         std::optional<ServerId> votedCandidate;
         int                     receivedVotes;
 
+        void becomeFollower();
         void becomeFollower(ServerId leader);
         void becomeCandidate();
         void becomeLeader();

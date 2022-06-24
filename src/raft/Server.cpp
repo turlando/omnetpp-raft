@@ -55,7 +55,7 @@ void Server::handleMessage(ServerId from, Message message) {
 
             if (msg.agree == false && term < msg.term) {
                 term = msg.term;
-                becomeFollower(from);
+                becomeFollower();
                 return;
             }
         }
@@ -80,6 +80,12 @@ void Server::maybeElection() {
 void Server::maybeHeartbeat() {
     if (role == Leader)
         broadcast(Heartbeat(term));
+}
+
+void Server::becomeFollower() {
+    votedCandidate.reset();
+    leader.reset();
+    role = Follower;
 }
 
 void Server::becomeFollower(ServerId _leader) {

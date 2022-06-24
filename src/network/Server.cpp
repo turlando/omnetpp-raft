@@ -8,6 +8,7 @@
 
 #include "../raft/Server.hpp"
 
+// TODO: unify with timeouts from raft module
 const float startupElectionMinTimeout = 0.15; // 150 ms
 const float startupElectionMaxTimeout = 0.30; // 300 ms
 const float heartbeatTimeout          = 0.05; // 50 ms
@@ -160,4 +161,3 @@ void Server::resetElectionTimeout() {
     scheduleAfter(uniform(startupElectionMinTimeout, startupElectionMaxTimeout),
                   internalElectionTimeout);
 }
-
