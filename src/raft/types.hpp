@@ -22,6 +22,26 @@ using GetServers  = std::function<Servers (void)>;
 
 using ResetElectionTimeout = std::function<void (void)>;
 
+/* Log types *****************************************************************/
+
+template <typename LogAction>
+struct LogEntry {
+    Term      term;
+    LogAction action;
+
+    LogEntry() {}; // TODO: just to make omnet happy in AppenRequest.msg
+    LogEntry(Term term, LogAction action)
+        : term(term)
+        , action(action)
+    {};
+};
+
+template <typename LogAction>
+using LogEntries = std::vector<LogEntry<LogAction>>;
+
+struct DummyLogAction {};
+using DummyLogEntries = LogEntries<DummyLogAction>;
+
 /* Message types *************************************************************/
 
 enum Role {
@@ -60,7 +80,25 @@ struct RequestVoteReply {
     {};
 };
 
-using Message     = std::variant<Heartbeat, RequestVote, RequestVoteReply>;
+struct AppendEntries {
+    Term term;
+    int prevLogIndex; // TODO: use more meaningful types
+    int prevLogTerm;  // TODO: use more meaningful types
+    DummyLogEntries entries;
+    int leaderCommit; // TODO: use more meaningful types
+
+    AppendEntries(
+        Term term, int prevLogIndex, int prevLogTerm,
+        DummyLogEntries entries, int leaderCommit
+    )   : term(term)
+        , prevLogIndex(prevLogIndex)
+        , prevLogTerm(prevLogTerm)
+        , entries(entries)
+        , leaderCommit(leaderCommit)
+    {};
+};
+
+using Message     = std::variant<Heartbeat, RequestVote, RequestVoteReply, AppendEntries>;
 using SendMessage = std::function<void (ServerId, Message)>;
 
 }

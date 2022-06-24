@@ -3,31 +3,32 @@
 namespace raft {
 
 template <typename LogAction>
-struct LogEntry {
-    Term      term;
-    LogAction action;
-
-    LogEntry(Term term, LogAction action)
-        : term(term)
-        , action(action)
-    {};
-};
-
-template <typename LogAction>
 class Log {
     private:
         std::vector<LogEntry<LogAction>> log;
 
     public:
+        Term getTerm(int index) {
+            if (log.empty() == true)
+                return -1;
+            else
+                return log.at(index).term;
+        }
+
         int lastIndex() {
             return log.size() - 1;
         }
 
         int lastTerm() {
-            if (log.empty() == true)
-                return -1;
-            else
-                return log.at(lastIndex()).term;
+            return getTerm(lastIndex());
+        }
+
+        void removeFrom(int index) {
+            log.erase(log.begin() + index, log.end());
+        }
+
+        void insertFrom(int index, std::vector<LogEntry<LogAction>> entries) {
+            log.insert(log.begin() + index, entries.begin(), entries.end());
         }
 };
 

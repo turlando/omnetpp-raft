@@ -23,10 +23,12 @@ class Server {
         std::optional<ServerId> votedCandidate;
         int                     receivedVotes;
 
-        Log<int> log;
+        Log<DummyLogAction> log;
+        int commitIndex;
+        int lastApplied;
 
-        void becomeFollower();
-        void becomeFollower(ServerId leader);
+        void becomeFollower(Term term);
+        void becomeFollower(Term term, ServerId leader);
         void becomeCandidate();
         void becomeLeader();
 

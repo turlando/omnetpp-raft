@@ -9,8 +9,7 @@ void Server::handleMessage(ServerId from, Message message) {
     std::visit(match {
         [&](Heartbeat& msg) {
             if (msg.term >= term) {
-                term = msg.term;
-                becomeFollower(from);
+                becomeFollower(msg.term, from);
             }
 
             if (role == Follower && leader.has_value())
@@ -48,10 +47,32 @@ void Server::handleMessage(ServerId from, Message message) {
             }
 
             if (msg.agree == false && term < msg.term) {
-                term = msg.term;
-                becomeFollower();
+                becomeFollower(msg.term);
                 return;
             }
+        },
+        [&](AppendEntries& msg) {
+            if (msg.term < term) {
+                // reply false
+                return;
+            }
+
+            bool logOk
+                = msg.prevLogIndex == -1
+               || msg.prevLogTerm == log.getTerm(msg.prevLogIndex);
+
+            if (logOk == false) {
+                // reply false
+                return;
+            }
+
+            // might be broken
+            log.removeFrom(msg.prevLogIndex);
+            log.insertFrom(msg.prevLogIndex, msg.entries);
+
+            if (msg.leaderCommit > commitIndex)
+                commitIndex = std::min(msg.leaderCommit, log.lastIndex());
+
         }
     }, message);
 }
@@ -76,14 +97,16 @@ void Server::maybeHeartbeat() {
         broadcast(Heartbeat(term));
 }
 
-void Server::becomeFollower() {
+void Server::becomeFollower(Term _term) {
     votedCandidate.reset();
     leader.reset();
+    term = _term;
     role = Follower;
 }
 
-void Server::becomeFollower(ServerId _leader) {
+void Server::becomeFollower(Term _term, ServerId _leader) {
     votedCandidate.reset();
+    term = _term;
     leader = _leader;
     role = Follower;
 }
