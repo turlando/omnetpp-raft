@@ -9,7 +9,7 @@ void Server::handleMessage(ServerId from, Message message) {
         [&](Heartbeat& msg) {
             updateHeartbeatTime();
 
-            if (role == Candidate && msg.term >= term) {
+            if (msg.term >= term) {
                 term = msg.term;
                 becomeFollower(from);
             }
