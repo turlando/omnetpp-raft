@@ -9,18 +9,20 @@ const Time HEARTBEAT_TIMEOUT = std::chrono::milliseconds(50);
 
 class Server {
     private:
-        const GetTime     getTime;
-        const GetServerId getId;
-        const GetServers  getServers;
-        const SendMessage send;
+        const GetTime             getTime;
+        const GetServerId         getId;
+        const GetServers          getServers;
+        const SendMessage          send;
+        const ResetElectionTimeout resetElectionTimeout;
 
         enum Role               role;
         Term                    term;
+        std::optional<ServerId> leader;
         Time                    lastHeartbeatTime;
         std::optional<ServerId> votedCandidate;
         int                     receivedVotes;
 
-        void becomeFollower();
+        void becomeFollower(ServerId leader);
         void becomeCandidate();
         void becomeLeader();
 
@@ -31,21 +33,30 @@ class Server {
         void election();
 
     public:
-        Server(GetTime getTime, GetServerId getId, GetServers getServers, SendMessage sendMessage)
+        Server(
+                GetTime getTime,
+                GetServerId getId,
+                GetServers getServers,
+                SendMessage sendMessage,
+                ResetElectionTimeout resetElectionTimeout
+              )
             : getTime(getTime)
             , getId(getId)
             , getServers(getServers)
             , send(sendMessage)
+            , resetElectionTimeout(resetElectionTimeout)
             , role(Follower)
             , term(0)
+            , leader(std::nullopt)
             , lastHeartbeatTime() // initialized to epoch
             , votedCandidate(std::nullopt)
             , receivedVotes(0)
         {};
 
-        enum Role getRole();
-        Term      getTerm();
-        int       getReceivedVotes();
+        enum Role               getRole();
+        Term                    getTerm();
+        std::optional<ServerId> getLeader();
+        int                     getReceivedVotes();
 
         void handleMessage(ServerId from, Message message);
         void maybeElection();

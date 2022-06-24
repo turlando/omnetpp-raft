@@ -11,11 +11,14 @@ void Server::handleMessage(ServerId from, Message message) {
 
             if (role == Candidate && msg.term >= term) {
                 term = msg.term;
-                becomeFollower();
+                becomeFollower(from);
             }
         },
 
         [&](RequestVote& msg) {
+            // Check log
+            resetElectionTimeout();
+
             // I wish this condition was present in the paper...
             if (role != Follower) {
                 send(from, RequestVoteReply(term, false));
@@ -52,16 +55,17 @@ void Server::handleMessage(ServerId from, Message message) {
 
             if (msg.agree == false && term < msg.term) {
                 term = msg.term;
-                becomeFollower();
+                becomeFollower(from);
                 return;
             }
         }
     }, message);
 }
 
-enum Role Server::getRole()          { return role; }
-int       Server::getReceivedVotes() { return receivedVotes; }
-Term      Server::getTerm()          { return term; }
+enum Role               Server::getRole()          { return role; }
+int                     Server::getReceivedVotes() { return receivedVotes; }
+Term                    Server::getTerm()          { return term; }
+std::optional<ServerId> Server::getLeader()        { return leader; }
 
 // this must only be called once every ELECTION_TIMEOUT
 void Server::maybeElection() {
@@ -78,8 +82,9 @@ void Server::maybeHeartbeat() {
         broadcast(Heartbeat(term));
 }
 
-void Server::becomeFollower() {
+void Server::becomeFollower(ServerId _leader) {
     votedCandidate.reset();
+    leader = _leader;
     role = Follower;
 }
 

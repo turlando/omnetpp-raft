@@ -22,10 +22,14 @@ class Server : public omnetpp::cSimpleModule {
     private:
         raft::Server raftServer;
 
+        InternalElectionTimeout *internalElectionTimeout;
+
         raft::Time      getTime();
         raft::Servers   getServers();
         omnetpp::cGate* gateForNode(int);
         void            sendRaftMessageToNode(raft::ServerId id, raft::Message msg);
+
+        void resetElectionTimeout();
 
         void setColor(const char *color);
         void setText(const char *color);
@@ -37,11 +41,13 @@ class Server : public omnetpp::cSimpleModule {
     public:
         Server()
             : omnetpp::cSimpleModule()
+            , internalElectionTimeout(new InternalElectionTimeout())
             , raftServer(
                 [&]() { return getTime(); },
                 [&]() { return getIndex(); },
                 [&]() { return getServers(); },
-                [&](int id, raft::Message msg) { sendRaftMessageToNode(id, msg); }
+                [&](int id, raft::Message msg) { sendRaftMessageToNode(id, msg); },
+                [&]() { resetElectionTimeout(); }
             )
         {};
 };
@@ -51,8 +57,7 @@ Define_Module(Server);
 void Server::initialize() {
     updateDisplay();
 
-    scheduleAfter(uniform(startupElectionMinTimeout, startupElectionMaxTimeout),
-                  new InternalElectionTimeout());
+    resetElectionTimeout();
     scheduleAfter(heartbeatTimeout, new InternalHeartbeatTimeout());
 }
 
@@ -91,14 +96,23 @@ void Server::updateDisplay() {
 
     char buffer[512];
 
-    if (raftServer.getRole() == raft::Candidate) {
-        snprintf(buffer, sizeof(buffer),
-                "Term: %d\nReceivedVotes: %d",
-                raftServer.getTerm(), raftServer.getReceivedVotes());
-    } else {
-        snprintf(buffer, sizeof(buffer),
-                "Term: %d\n",
-                raftServer.getTerm());
+    switch (raftServer.getRole()) {
+        case raft::Follower:
+            snprintf(buffer, sizeof(buffer),
+                     "Term: %d\nLeader: %d",
+                     raftServer.getTerm(),
+                     raftServer.getLeader().value_or(-1));
+            break;
+        case raft::Candidate:
+            snprintf(buffer, sizeof(buffer),
+                     "Term: %d\nReceivedVotes: %d",
+                     raftServer.getTerm(),
+                     raftServer.getReceivedVotes());
+            break;
+        default:
+            snprintf(buffer, sizeof(buffer),
+                     "Term: %d\n",
+                     raftServer.getTerm());
     }
 
     setText(buffer);
@@ -139,5 +153,11 @@ void Server::sendRaftMessageToNode(raft::ServerId id, raft::Message msg) {
     send(omnetMessage, destGate);
     updateDisplay();
 
+}
+
+void Server::resetElectionTimeout() {
+    cancelEvent(internalElectionTimeout);
+    scheduleAfter(uniform(startupElectionMinTimeout, startupElectionMaxTimeout),
+                  internalElectionTimeout);
 }
 

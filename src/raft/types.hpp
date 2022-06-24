@@ -18,6 +18,8 @@ using Servers  = std::set<ServerId>;
 using GetServerId = std::function<ServerId (void)>;
 using GetServers  = std::function<Servers (void)>;
 
+using ResetElectionTimeout = std::function<void (void)>;
+
 enum Role {
     Follower,
     Candidate,
