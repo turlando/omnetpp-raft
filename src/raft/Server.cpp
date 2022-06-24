@@ -1,5 +1,6 @@
 #include "Server.hpp"
 
+#include <iostream>
 #include "../utils.hpp"
 
 namespace raft {
@@ -7,38 +8,31 @@ namespace raft {
 void Server::handleMessage(ServerId from, Message message) {
     std::visit(match {
         [&](Heartbeat& msg) {
-            updateHeartbeatTime();
-
             if (msg.term >= term) {
                 term = msg.term;
                 becomeFollower(from);
             }
+
+            if (role == Follower && leader.has_value())
+                updateHeartbeatTime();
         },
 
         [&](RequestVote& msg) {
-            // Check log
-            resetElectionTimeout();
+            bool logOk
+                = (msg.lastLogTerm > log.lastTerm())
+               || (msg.lastLogTerm == log.lastTerm()
+                   && msg.lastLogIndex >= log.lastIndex());
 
-            // I wish this condition was present in the paper...
-            if (role != Follower) {
-                send(from, RequestVoteReply(term, false));
-                return;
-            }
+            bool grantVote
+                = msg.term == term
+               && logOk == true
+               && votedCandidate.has_value() == false
+               || (votedCandidate.has_value() == true && votedCandidate.value() == from);
 
-            if (msg.term < term) {
-                send(from, RequestVoteReply(term, false));
-                return;
-            }
+            if (role == Follower)
+                resetElectionTimeout();
 
-            if (votedCandidate.has_value() == false) {
-                votedCandidate = from;
-                send(from, RequestVoteReply(term, true));
-            }
-
-            if (votedCandidate.has_value() == true && votedCandidate.value() == from) {
-                send(from, RequestVoteReply(term, true));
-                return;
-            }
+            send(from, RequestVoteReply(term, grantVote));
         },
 
         [&](RequestVoteReply& msg) {
@@ -108,7 +102,8 @@ void Server::becomeLeader() {
 }
 
 int Server::requiredVotesToBeLeader() {
-    return (getServers().size() + 1) / 2;
+    int nodes = getServers().size() + 1; // Adding itself
+    return (nodes + 1) / 2;
 }
 
 bool Server::isLeaderAlive() {
@@ -126,7 +121,7 @@ void Server::updateHeartbeatTime() {
 
 void Server::election() {
     becomeCandidate();
-    broadcast(RequestVote(term));
+    broadcast(RequestVote(term, log.lastIndex(), log.lastTerm()));
 }
 
 }

@@ -2,6 +2,7 @@
 
 #include <optional>
 #include "types.hpp"
+#include "Log.hpp"
 
 namespace raft {
 
@@ -9,9 +10,9 @@ const Time HEARTBEAT_TIMEOUT = std::chrono::milliseconds(50);
 
 class Server {
     private:
-        const GetTime             getTime;
-        const GetServerId         getId;
-        const GetServers          getServers;
+        const GetTime              getTime;
+        const GetServerId          getId;
+        const GetServers           getServers;
         const SendMessage          send;
         const ResetElectionTimeout resetElectionTimeout;
 
@@ -21,6 +22,8 @@ class Server {
         Time                    lastHeartbeatTime;
         std::optional<ServerId> votedCandidate;
         int                     receivedVotes;
+
+        Log<int> log;
 
         void becomeFollower();
         void becomeFollower(ServerId leader);

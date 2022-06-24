@@ -8,6 +8,8 @@
 
 namespace raft {
 
+/* Basic types ***************************************************************/
+
 using Time    = std::chrono::milliseconds;
 using GetTime = std::function<Time (void)>;
 
@@ -19,6 +21,8 @@ using GetServerId = std::function<ServerId (void)>;
 using GetServers  = std::function<Servers (void)>;
 
 using ResetElectionTimeout = std::function<void (void)>;
+
+/* Message types *************************************************************/
 
 enum Role {
     Follower,
@@ -36,9 +40,13 @@ struct Heartbeat {
 
 struct RequestVote {
     Term term;
+    int  lastLogIndex; // TODO: use more meaningful types
+    int  lastLogTerm;  // TODO: use more meaningful types
 
-    RequestVote(Term term)
+    RequestVote(Term term, int lastLogIndex, int lastLogTerm)
         : term(term)
+        , lastLogIndex(lastLogIndex)
+        , lastLogTerm(lastLogTerm)
     {};
 };
 
@@ -54,6 +62,5 @@ struct RequestVoteReply {
 
 using Message     = std::variant<Heartbeat, RequestVote, RequestVoteReply>;
 using SendMessage = std::function<void (ServerId, Message)>;
-
 
 }

@@ -16,6 +16,8 @@ omnetpp::cMessage *raftMessageToOmnetMessage(raft::Message message) {
         [](raft::RequestVote& x) -> omnetpp::cMessage* {
             auto m = new RequestVote();
             m->setTerm(x.term);
+            m->setLastLogIndex(x.lastLogIndex);
+            m->setLastLogTerm(x.lastLogTerm);
             return m;
         },
 
@@ -41,7 +43,7 @@ raft::Message omnetMessageToRaftMessage(omnetpp::cMessage *message) {
     {
         RequestVote *m = dynamic_cast<RequestVote*>(message);
         if (m != nullptr)
-            return raft::RequestVote(m->getTerm());
+            return raft::RequestVote(m->getTerm(), m->getLastLogIndex(), m->getLastLogTerm());
     }
 
     {
