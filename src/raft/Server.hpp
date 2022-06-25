@@ -27,6 +27,9 @@ class Server {
         int commitIndex;
         int lastApplied;
 
+        std::map<ServerId, int> nextIndex;
+        std::map<ServerId, int> matchIndex;
+
         void becomeFollower(Term term);
         void becomeFollower(Term term, ServerId leader);
         void becomeCandidate();

@@ -5,6 +5,7 @@
 #include "msg/RequestVote_m.h"
 #include "msg/RequestVoteReply_m.h"
 #include "msg/AppendEntries_m.h"
+#include "msg/AppendEntriesReply_m.h"
 
 omnetpp::cMessage *raftMessageToOmnetMessage(raft::Message message) {
     return std::visit(match {
@@ -34,8 +35,14 @@ omnetpp::cMessage *raftMessageToOmnetMessage(raft::Message message) {
             m->setTerm(x.term);
             m->setPrevLogIndex(x.prevLogIndex);
             m->setPrevLogTerm(x.prevLogTerm);
-            m->setEntries(x.entries);
+            m->setEntry(x.entry);
             m->setLeaderCommit(x.leaderCommit);
+            return m;
+        },
+        [](raft::AppendEntriesReply& x) -> omnetpp::cMessage* {
+            auto m = new AppendEntriesReply();
+            m->setTerm(x.term);
+            m->setSuccess(x.success);
             return m;
         }
     }, message);
@@ -68,8 +75,14 @@ raft::Message omnetMessageToRaftMessage(omnetpp::cMessage *message) {
         if (m != nullptr)
             return raft::AppendEntries(
                 m->getTerm(), m->getPrevLogIndex(), m->getPrevLogTerm(),
-                m->getEntries(), m->getLeaderCommit()
+                m->getEntry(), m->getLeaderCommit()
             );
+    }
+
+    {
+        AppendEntriesReply *m = dynamic_cast<AppendEntriesReply*>(message);
+        if (m != nullptr)
+            return raft::AppendEntriesReply(m->getTerm(), m->getSuccess());
     }
 
     throw omnetpp::cRuntimeError("Unable to convert Omnet++ message to Raft message");

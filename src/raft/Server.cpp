@@ -26,7 +26,8 @@ void Server::handleMessage(ServerId from, Message message) {
                 = msg.term == term
                && logOk == true
                && votedCandidate.has_value() == false
-               || (votedCandidate.has_value() == true && votedCandidate.value() == from);
+               || (votedCandidate.has_value() == true
+                   && votedCandidate.value() == from);
 
             if (role == Follower)
                 resetElectionTimeout();
@@ -51,6 +52,7 @@ void Server::handleMessage(ServerId from, Message message) {
                 return;
             }
         },
+
         [&](AppendEntries& msg) {
             if (msg.term < term) {
                 // reply false
@@ -68,11 +70,36 @@ void Server::handleMessage(ServerId from, Message message) {
 
             // might be broken
             log.removeFrom(msg.prevLogIndex);
-            log.insertFrom(msg.prevLogIndex, msg.entries);
+            log.insertAt(msg.prevLogIndex, msg.entry);
 
             if (msg.leaderCommit > commitIndex)
                 commitIndex = std::min(msg.leaderCommit, log.lastIndex());
+        },
 
+        [&](AppendEntriesReply& msg) {
+//            int oldNextIndex = nextIndex.at(from);
+//            if (msg.success == true) {
+//                int newNextIndex = oldNextIndex + 1;
+//                nextIndex.insert_or_assign(from, newNextIndex);
+//                matchIndex.insert_or_assign(from, newNextIndex - 1);
+//            } else {
+//                int newNextIndex = oldNextIndex - 1;
+//                nextIndex.insert_or_assign(from, newNextIndex);
+//                send(from,
+//                     AppendEntries(term, , prevLogTerm,
+//                                   log.get(oldNextIndex - 1), leaderCommit));
+//            }
+//
+//            int k = 0;
+//            for (int n = commitIndex; n < log.size(); n++) {
+//                for (auto server : getServers()) {
+//                    if (matchIndex.at(server) >= commitIndex)
+//                        k++;
+//                }
+//                if (k >= requiredVotedToBeLeader() && log.get(n).term == term) {
+//                    commitIndex = n;
+//                }
+//            }
         }
     }, message);
 }
@@ -121,6 +148,15 @@ void Server::becomeCandidate() {
 void Server::becomeLeader() {
     receivedVotes = 0;
     votedCandidate.reset();
+
+    nextIndex.clear();
+    matchIndex.clear();
+
+    for (auto server : getServers()) {
+        nextIndex.insert_or_assign(server, log.size());
+        matchIndex.insert_or_assign(server, 0);
+    }
+
     role = Leader;
 }
 

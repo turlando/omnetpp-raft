@@ -40,7 +40,7 @@ template <typename LogAction>
 using LogEntries = std::vector<LogEntry<LogAction>>;
 
 struct DummyLogAction {};
-using DummyLogEntries = LogEntries<DummyLogAction>;
+using DummyLogEntry = LogEntry<DummyLogAction>;
 
 /* Message types *************************************************************/
 
@@ -84,21 +84,31 @@ struct AppendEntries {
     Term term;
     int prevLogIndex; // TODO: use more meaningful types
     int prevLogTerm;  // TODO: use more meaningful types
-    DummyLogEntries entries;
+    DummyLogEntry entry;
     int leaderCommit; // TODO: use more meaningful types
 
     AppendEntries(
         Term term, int prevLogIndex, int prevLogTerm,
-        DummyLogEntries entries, int leaderCommit
+        DummyLogEntry entries, int leaderCommit
     )   : term(term)
         , prevLogIndex(prevLogIndex)
         , prevLogTerm(prevLogTerm)
-        , entries(entries)
+        , entry(entry)
         , leaderCommit(leaderCommit)
     {};
 };
 
-using Message     = std::variant<Heartbeat, RequestVote, RequestVoteReply, AppendEntries>;
+struct AppendEntriesReply {
+    Term term;
+    bool success;
+
+    AppendEntriesReply(Term term, bool success)
+        : term(term)
+        , success(success)
+    {};
+};
+
+using Message     = std::variant<Heartbeat, RequestVote, RequestVoteReply, AppendEntries, AppendEntriesReply>;
 using SendMessage = std::function<void (ServerId, Message)>;
 
 }

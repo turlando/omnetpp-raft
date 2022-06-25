@@ -8,6 +8,14 @@ class Log {
         std::vector<LogEntry<LogAction>> log;
 
     public:
+        int size() {
+            return log.size();
+        }
+
+        LogEntry<LogAction> get(int index) {
+            return log.at(index);
+        }
+
         Term getTerm(int index) {
             if (log.empty() == true)
                 return -1;
@@ -29,6 +37,10 @@ class Log {
 
         void insertFrom(int index, std::vector<LogEntry<LogAction>> entries) {
             log.insert(log.begin() + index, entries.begin(), entries.end());
+        }
+
+        void insertAt(int index, LogEntry<LogAction> entry) {
+            log.insert(log.begin() + index, entry);
         }
 };
 
