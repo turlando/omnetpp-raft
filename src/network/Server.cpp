@@ -36,6 +36,10 @@ class Server : public omnetpp::cSimpleModule {
         void setText(const char *color);
         void updateDisplay();
 
+        omnetpp::simsignal_t messageReceivedSignal = registerSignal("messageReceived");
+        omnetpp::simsignal_t messageSentSignal = registerSignal("messageSent");
+
+    protected:
         virtual void initialize() override;
         virtual void handleMessage(omnetpp::cMessage *) override;
 
@@ -77,6 +81,9 @@ void Server::handleMessage(omnetpp::cMessage *msg) {
         scheduleAfter(heartbeatTimeout, new InternalHeartbeatTimeout());
         return;
     }
+
+    // If it's not an internal event then fire the messageReceived signal
+    emit(messageReceivedSignal, 0);
 
     raft::Message m = omnetMessageToRaftMessage(msg);
     raftServer.handleMessage(msg->getSenderGate()->getOwnerModule()->getIndex(), m);
@@ -149,6 +156,7 @@ omnetpp::cGate *Server::gateForNode(raft::ServerId id) {
 }
 
 void Server::sendRaftMessageToNode(raft::ServerId id, raft::Message msg) {
+    emit(messageSentSignal, 0);
     omnetpp::cMessage *omnetMessage = raftMessageToOmnetMessage(msg);
     omnetpp::cGate    *destGate     = gateForNode(id);
     send(omnetMessage, destGate);
