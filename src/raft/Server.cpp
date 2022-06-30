@@ -13,6 +13,17 @@ std::optional<ServerId> Server::getLeader()        { return leader; }
 
 /****************************************************************************/
 
+int Server::quorum() {
+    int nodes = getServers().size() + 1; // Adding itself
+    return (nodes + 1) / 2;
+}
+
+bool Server::isLeaderAlive() {
+    return (getTime() - lastHeartbeatTime) <= HEARTBEAT_TIMEOUT;
+}
+
+/****************************************************************************/
+
 void Server::becomeFollower(Term _term) {
     votedCandidate.reset();
     leader.reset();
@@ -53,11 +64,53 @@ void Server::becomeLeader() {
 
 /****************************************************************************/
 
+// this must only be called once every ELECTION_TIMEOUT
+void Server::maybeElection() {
+    // if last communication from leader has happened during election timeout
+    // then start new election.
+    // if election is in progress (state == Candidate) and no leader has been
+    // chosen during election timeout then start a new election.
+    if (role != Leader && isLeaderAlive() == false)
+        election();
+}
+
+void Server::maybeHeartbeat() {
+    if (role == Leader)
+        broadcast(AppendEntries(term, log.lastIndex(), log.lastTerm(), {}, commitIndex));
+}
+
+/****************************************************************************/
+
+void Server::updateHeartbeatTime() {
+    lastHeartbeatTime = getTime();
+}
+
+void Server::updateTerm(Term messageTerm) {
+    if (messageTerm > term) {
+        becomeFollower(messageTerm);
+        updateHeartbeatTime();
+    }
+}
+
+/****************************************************************************/
+
+void Server::broadcast(Message message) {
+    for (auto server : getServers())
+        send(server, message);
+}
+
+
+void Server::election() {
+    becomeCandidate();
+    broadcast(RequestVote(term, log.lastIndex(), log.lastTerm()));
+}
+
+/****************************************************************************/
+
 void Server::handleMessage(ServerId from, Message message) {
     std::visit(match {
         [&](RequestVote& msg) {
-            if (msg.term > term)
-                becomeFollower(msg.term);
+            updateTerm(msg.term);
 
             bool logOk
                 = msg.lastLogTerm > log.lastTerm()
@@ -180,43 +233,5 @@ void Server::handleMessage(ServerId from, Message message) {
 }
 
 /****************************************************************************/
-
-// this must only be called once every ELECTION_TIMEOUT
-void Server::maybeElection() {
-    // if last communication from leader has happened during election timeout
-    // then start new election.
-    // if election is in progress (state == Candidate) and no leader has been
-    // chosen during election timeout then start a new election.
-    if (role != Leader && isLeaderAlive() == false)
-        election();
-}
-
-void Server::maybeHeartbeat() {
-    if (role == Leader)
-        broadcast(AppendEntries(term, log.lastIndex(), log.lastTerm(), {}, commitIndex));
-}
-
-int Server::quorum() {
-    int nodes = getServers().size() + 1; // Adding itself
-    return (nodes + 1) / 2;
-}
-
-bool Server::isLeaderAlive() {
-    return (getTime() - lastHeartbeatTime) <= HEARTBEAT_TIMEOUT;
-}
-
-void Server::broadcast(Message message) {
-    for (auto server : getServers())
-        send(server, message);
-}
-
-void Server::updateHeartbeatTime() {
-    lastHeartbeatTime = getTime();
-}
-
-void Server::election() {
-    becomeCandidate();
-    broadcast(RequestVote(term, log.lastIndex(), log.lastTerm()));
-}
 
 }
