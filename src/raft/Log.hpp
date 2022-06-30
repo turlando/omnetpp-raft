@@ -16,6 +16,7 @@ class Log {
             return log.at(index);
         }
 
+        // TODO: return optional instead of -1.
         Term getTerm(int index) {
             if (log.empty() == true)
                 return -1;
@@ -23,6 +24,8 @@ class Log {
                 return log.at(index).term;
         }
 
+        // TODO: This will return -1 if log is empty.
+        // Return optional instead.
         int lastIndex() {
             return log.size() - 1;
         }
@@ -41,6 +44,10 @@ class Log {
 
         void insertAt(int index, LogEntry<LogAction> entry) {
             log.insert(log.begin() + index, entry);
+        }
+
+        void append(LogEntry<LogAction> entry) {
+            log.push_back(entry);
         }
 };
 

@@ -5,6 +5,7 @@
 #include <map>
 #include <set>
 #include <variant>
+#include <optional>
 
 namespace raft {
 
@@ -41,6 +42,7 @@ using LogEntries = std::vector<LogEntry<LogAction>>;
 
 struct DummyLogAction {};
 using DummyLogEntry = LogEntry<DummyLogAction>;
+using MaybeDummyLogEntry = std::optional<DummyLogEntry>;
 
 /* Message types *************************************************************/
 
@@ -84,12 +86,12 @@ struct AppendEntries {
     Term term;
     int prevLogIndex; // TODO: use more meaningful types
     int prevLogTerm;  // TODO: use more meaningful types
-    DummyLogEntry entry;
+    MaybeDummyLogEntry entry;
     int leaderCommit; // TODO: use more meaningful types
 
     AppendEntries(
         Term term, int prevLogIndex, int prevLogTerm,
-        DummyLogEntry entries, int leaderCommit
+        MaybeDummyLogEntry entry, int leaderCommit
     )   : term(term)
         , prevLogIndex(prevLogIndex)
         , prevLogTerm(prevLogTerm)

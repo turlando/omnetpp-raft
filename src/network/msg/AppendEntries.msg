@@ -1,7 +1,6 @@
 cplusplus {{
-#include <vector>
 #include "../../raft/types.hpp"
-typedef raft::DummyLogEntry Entry;
+typedef raft::MaybeDummyLogEntry Entry;
 }}
 
 // Thank you Omnet++ for all this mental gymnastics
@@ -11,9 +10,9 @@ class Entry {
 }
 
 message AppendEntries {
-    int     term;
-    int     prevLogIndex;
-    int     prevLogTerm;
+    int   term;
+    int   prevLogIndex;
+    int   prevLogTerm;
     Entry entry;
-    int     leaderCommit;
+    int   leaderCommit;
 }

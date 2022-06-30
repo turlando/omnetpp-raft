@@ -17,16 +17,30 @@ class Server {
         const ResetElectionTimeout resetElectionTimeout;
 
         enum Role               role;
-        Term                    term;
         std::optional<ServerId> leader;
         Time                    lastHeartbeatTime;
-        std::optional<ServerId> votedCandidate;
         int                     receivedVotes;
 
-        Log<DummyLogAction> log;
-        int commitIndex;
-        int lastApplied;
+        /*
+         * Persistent state on all servers
+         * Updated on stable storage before responding to RPCs
+         */
+        Term                    term;
+        std::optional<ServerId> votedCandidate;
+        Log<DummyLogAction>     log;
 
+        /*
+         * Volatile state on all servers.
+         * Actually, not really,
+         * cfr. https://groups.google.com/g/raft-dev/c/KIozjYuq5m0
+         */
+        int commitIndex = 0;
+        int lastApplied = 0;
+
+        /*
+         * Volatile state on leaders.
+         * Reinitialized after election.
+         */
         std::map<ServerId, int> nextIndex;
         std::map<ServerId, int> matchIndex;
 
@@ -35,7 +49,7 @@ class Server {
         void becomeCandidate();
         void becomeLeader();
 
-        int  requiredVotesToBeLeader();
+        int  quorum();
         bool isLeaderAlive();
         void broadcast(Message);
         void updateHeartbeatTime();
