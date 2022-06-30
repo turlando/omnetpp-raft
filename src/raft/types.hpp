@@ -52,14 +52,6 @@ enum Role {
     Leader
 };
 
-struct Heartbeat {
-    Term term;
-
-    Heartbeat(Term term)
-        : term(term)
-    {}
-};
-
 struct RequestVote {
     Term term;
     int  lastLogIndex; // TODO: use more meaningful types
@@ -110,7 +102,7 @@ struct AppendEntriesReply {
     {};
 };
 
-using Message     = std::variant<Heartbeat, RequestVote, RequestVoteReply, AppendEntries, AppendEntriesReply>;
+using Message     = std::variant<RequestVote, RequestVoteReply, AppendEntries, AppendEntriesReply>;
 using SendMessage = std::function<void (ServerId, Message)>;
 
 }

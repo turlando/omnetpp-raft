@@ -1,3 +1,0 @@
-message Heartbeat {
-    int term;
-}

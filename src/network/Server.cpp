@@ -2,7 +2,7 @@
 #include <omnetpp.h>
 
 #include "utils.hpp"
-#include "msg/Heartbeat_m.h"
+
 #include "msg/InternalElectionTimeout_m.h"
 #include "msg/InternalHeartbeatTimeout_m.h"
 

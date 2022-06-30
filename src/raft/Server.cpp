@@ -1,9 +1,15 @@
 #include "Server.hpp"
 
 #include "../utils.hpp"
-#include <ranges>
 
 namespace raft {
+
+/****************************************************************************/
+
+enum Role               Server::getRole()          { return role; }
+int                     Server::getReceivedVotes() { return receivedVotes; }
+Term                    Server::getTerm()          { return term; }
+std::optional<ServerId> Server::getLeader()        { return leader; }
 
 /****************************************************************************/
 
@@ -49,8 +55,6 @@ void Server::becomeLeader() {
 
 void Server::handleMessage(ServerId from, Message message) {
     std::visit(match {
-        [&](Heartbeat& msg) {},
-
         [&](RequestVote& msg) {
             if (msg.term > term)
                 becomeFollower(msg.term);
@@ -174,13 +178,6 @@ void Server::handleMessage(ServerId from, Message message) {
         }
     }, message);
 }
-
-/****************************************************************************/
-
-enum Role               Server::getRole()          { return role; }
-int                     Server::getReceivedVotes() { return receivedVotes; }
-Term                    Server::getTerm()          { return term; }
-std::optional<ServerId> Server::getLeader()        { return leader; }
 
 /****************************************************************************/
 

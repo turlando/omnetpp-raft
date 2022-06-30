@@ -1,7 +1,6 @@
 #include "utils.hpp"
 
 #include "../utils.hpp"
-#include "msg/Heartbeat_m.h"
 #include "msg/RequestVote_m.h"
 #include "msg/RequestVoteReply_m.h"
 #include "msg/AppendEntries_m.h"
@@ -9,12 +8,6 @@
 
 omnetpp::cMessage *raftMessageToOmnetMessage(raft::Message message) {
     return std::visit(match {
-        [](raft::Heartbeat& x) -> omnetpp::cMessage* {
-            auto m = new Heartbeat();
-            m->setTerm(x.term);
-            return m;
-        },
-
         [](raft::RequestVote& x) -> omnetpp::cMessage* {
             auto m = new RequestVote();
             m->setTerm(x.term);
@@ -52,12 +45,6 @@ omnetpp::cMessage *raftMessageToOmnetMessage(raft::Message message) {
 
 
 raft::Message omnetMessageToRaftMessage(omnetpp::cMessage *message) {
-    {
-        Heartbeat *m = dynamic_cast<Heartbeat*>(message);
-        if (m != nullptr)
-            return raft::Heartbeat(m->getTerm());
-    }
-
     {
         RequestVote *m = dynamic_cast<RequestVote*>(message);
         if (m != nullptr)
