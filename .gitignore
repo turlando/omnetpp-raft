@@ -92,3 +92,7 @@ xxx
 /tmp/
 /.computed/
 *.DS_Store
+
+# ignore output binary
+src/Raft
+
