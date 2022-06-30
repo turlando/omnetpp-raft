@@ -23,18 +23,18 @@ class Server {
 
         /********************************************************************/
 
-        enum Role               role;
-        std::optional<ServerId> leader;
-        Time                    lastHeartbeatTime;
-        int                     receivedVotes;
+        enum Role               role              = Follower;
+        std::optional<ServerId> leader            = {};
+        Time                    lastHeartbeatTime = {};
+        int                     receivedVotes     = 0;
 
         /*
          * Persistent state on all servers
          * Updated on stable storage before responding to RPCs
          */
-        Term                    term;
-        std::optional<ServerId> votedCandidate;
-        Log<DummyLogAction>     log;
+        Term                    term           = 0;
+        std::optional<ServerId> votedCandidate = {};
+        Log<DummyLogAction>     log            = {};
 
 
         /*
@@ -42,15 +42,15 @@ class Server {
          * Actually, not really,
          * cfr. https://groups.google.com/g/raft-dev/c/KIozjYuq5m0
          */
-        int commitIndex;
-        int lastApplied;
+        int commitIndex = 0;
+        int lastApplied = 0;
 
         /*
          * Volatile state on leaders.
          * Reinitialized after election.
          */
-        std::map<ServerId, int> nextIndex;
-        std::map<ServerId, int> matchIndex;
+        std::map<ServerId, int> nextIndex  = {};
+        std::map<ServerId, int> matchIndex = {};
 
         /********************************************************************/
 
@@ -83,7 +83,6 @@ class Server {
             , getServers(getServers)
             , send(sendMessage)
             , resetElectionTimeout(resetElectionTimeout)
-            , role(Follower)
         {};
 
         enum Role               getRole();
