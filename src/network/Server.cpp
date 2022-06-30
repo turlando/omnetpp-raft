@@ -1,12 +1,13 @@
-#include <functional>
+#include <set>
+#include <utility>
+
 #include <omnetpp.h>
 
 #include "utils.hpp"
-
 #include "msg/InternalElectionTimeout_m.h"
 #include "msg/InternalHeartbeatTimeout_m.h"
-
 #include "../raft/Server.hpp"
+
 
 // TODO: unify with timeouts from raft module
 const float startupElectionMinTimeout = 0.15; // 150 ms

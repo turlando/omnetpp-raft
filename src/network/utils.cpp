@@ -1,10 +1,15 @@
 #include "utils.hpp"
 
+#include <variant>
+
+#include <omnetpp/cexception.h>
+
+#include "../raft/types.hpp"
 #include "../utils.hpp"
-#include "msg/RequestVote_m.h"
-#include "msg/RequestVoteReply_m.h"
 #include "msg/AppendEntries_m.h"
 #include "msg/AppendEntriesReply_m.h"
+#include "msg/RequestVote_m.h"
+#include "msg/RequestVoteReply_m.h"
 
 omnetpp::cMessage *raftMessageToOmnetMessage(raft::Message message) {
     return std::visit(match {

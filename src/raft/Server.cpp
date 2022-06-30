@@ -1,5 +1,11 @@
 #include "Server.hpp"
 
+#include <algorithm>
+#include <functional>
+#include <set>
+#include <utility>
+#include <variant>
+
 #include "../utils.hpp"
 
 namespace raft {

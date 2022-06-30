@@ -1,3 +1,4 @@
+#include <vector>
 #include "types.hpp"
 
 namespace raft {
@@ -27,7 +28,7 @@ class Log {
         // TODO: This will return -1 if log is empty.
         // Return optional instead.
         int lastIndex() {
-            return log.size() - 1;
+            return size() - 1;
         }
 
         int lastTerm() {
@@ -36,14 +37,6 @@ class Log {
 
         void removeFrom(int index) {
             log.erase(log.begin() + index, log.end());
-        }
-
-        void insertFrom(int index, std::vector<LogEntry<LogAction>> entries) {
-            log.insert(log.begin() + index, entries.begin(), entries.end());
-        }
-
-        void insertAt(int index, LogEntry<LogAction> entry) {
-            log.insert(log.begin() + index, entry);
         }
 
         void append(LogEntry<LogAction> entry) {
