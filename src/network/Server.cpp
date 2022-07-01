@@ -48,8 +48,10 @@ class Server : public omnetpp::cSimpleModule {
 
         bool networkAvailable = true;
 
-        omnetpp::simsignal_t messageReceivedSignal = registerSignal("messageReceived");
-        omnetpp::simsignal_t messageSentSignal = registerSignal("messageSent");
+        omnetpp::simsignal_t messageReceivedBeforeElectionSignal
+            = registerSignal("messageReceivedBeforeElection");
+        omnetpp::simsignal_t messageSentBeforeElectionSignal
+            = registerSignal("messageSentBeforeElection");
 
     protected:
         virtual void initialize() override;
@@ -145,7 +147,10 @@ void Server::handleMessage(omnetpp::cMessage *msg) {
     /************************************************************************/
 
     // If it's not an internal event then fire the messageReceived signal
-    emit(messageReceivedSignal, 0);
+    if (   raftServer.getRole() == raft::Leader
+        || raftServer.getLeader().has_value() == true
+        )
+        emit(messageReceivedBeforeElectionSignal, 0);
 
     raft::Message m = omnetMessageToRaftMessage(msg);
     raftServer.handleMessage(msg->getSenderGate()->getOwnerModule()->getId(), m);
@@ -231,7 +236,11 @@ void Server::sendRaftMessageToNode(raft::ServerId id, raft::Message msg) {
     if (networkAvailable == false)
         return;
 
-    emit(messageSentSignal, 0);
+    if (   raftServer.getRole() == raft::Leader
+        || raftServer.getLeader().has_value() == true
+        )
+        emit(messageSentBeforeElectionSignal, 0);
+
     omnetpp::cMessage *omnetMessage = raftMessageToOmnetMessage(msg);
     omnetpp::cGate    *destGate     = gateForNode(id);
     send(omnetMessage, destGate);

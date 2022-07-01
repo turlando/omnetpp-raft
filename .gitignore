@@ -96,3 +96,5 @@ xxx
 # ignore output binary
 src/Raft
 
+# ignore results
+simulations/results
