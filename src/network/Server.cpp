@@ -16,7 +16,8 @@ const float startupElectionMinTimeout = 0.15; // 150 ms
 const float startupElectionMaxTimeout = 0.30; // 300 ms
 const float heartbeatTimeout          = 0.05; // 50 ms
 
-const float clientRequestTimeout = 0.5;
+const float clientRequestTimeout1 = 0.5;
+const float clientRequestTimeout2 = 0.8;
 
 const float networkShutdownTimeout = 0.6;
 const float networkRestoreTimeout  = 1.0;
@@ -76,8 +77,11 @@ void Server::initialize() {
     resetElectionTimeout();
     scheduleAfter(heartbeatTimeout, new InternalHeartbeatTimeout());
 
-    scheduleAt(clientRequestTimeout, new InternalClientRequestTimeout());
+    /************************************************************************/
+
+    scheduleAt(clientRequestTimeout1, new InternalClientRequestTimeout());
     scheduleAt(networkShutdownTimeout, new InternalNetworkPartitionTimeout());
+    scheduleAt(clientRequestTimeout2, new InternalClientRequestTimeout());
     scheduleAt(networkRestoreTimeout, new InternalNetworkPartitionTimeout());
 
 }

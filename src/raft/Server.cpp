@@ -192,14 +192,6 @@ void Server::handleMessage(ServerId from, Message message) {
                 return;
             }
 
-            // TODO: use assert?
-            if (   msg.term != term
-                || role != Follower
-                || logOk == false) {
-                // TODO: log this condition?
-                return;
-            }
-
             // Discriminate heartbeat
             if (msg.entry.has_value() == false)
                 return;
