@@ -6,6 +6,8 @@
 #include <utility>
 #include <variant>
 
+#include <cstdio>
+
 #include "../utils.hpp"
 
 namespace raft {
@@ -85,6 +87,11 @@ void Server::maybeHeartbeat() {
         broadcast(AppendEntries(term, log.lastIndex(), log.lastTerm(), {}, commitIndex));
 }
 
+void Server::append(DummyLogAction action) {
+    broadcast(AppendEntries(term, log.lastIndex(), log.lastTerm(),
+                            DummyLogEntry(term, action), commitIndex));
+}
+
 /****************************************************************************/
 
 void Server::updateHeartbeatTime() {
@@ -155,11 +162,9 @@ void Server::handleMessage(ServerId from, Message message) {
         [&](AppendEntries& msg) {
             updateHeartbeatTime();
 
-            int prevLogTerm = log.getTerm(msg.prevLogIndex);
-
             bool logOk
-                = msg.prevLogIndex == 0 // TODO: encapsulate default? Use optional?
-               || msg.prevLogTerm == prevLogTerm;
+                = msg.prevLogIndex == -1 // TODO: encapsulate default? Use optional?
+               || msg.prevLogTerm == log.getTerm(msg.prevLogIndex);
 
             if (msg.term == term) {
                 switch (role) {

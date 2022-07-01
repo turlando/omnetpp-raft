@@ -93,6 +93,7 @@ class Server {
         void maybeElection();
         void maybeHeartbeat();
         void handleMessage(ServerId from, Message message);
+        void append(DummyLogAction action);
 };
 
 }

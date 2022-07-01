@@ -6,6 +6,7 @@
 #include "utils.hpp"
 #include "msg/InternalElectionTimeout_m.h"
 #include "msg/InternalHeartbeatTimeout_m.h"
+#include "msg/InternalClientRequestTimeout_m.h"
 #include "../raft/Server.hpp"
 
 
@@ -13,6 +14,7 @@
 const float startupElectionMinTimeout = 0.15; // 150 ms
 const float startupElectionMaxTimeout = 0.30; // 300 ms
 const float heartbeatTimeout          = 0.05; // 50 ms
+const float clientRequestTimeout      = 0.5;
 
 const char *STATE_TO_COLOR[3] = {
     "#00FF00", // follower  = green
@@ -65,23 +67,45 @@ void Server::initialize() {
 
     resetElectionTimeout();
     scheduleAfter(heartbeatTimeout, new InternalHeartbeatTimeout());
+
+    scheduleAt(clientRequestTimeout, new InternalClientRequestTimeout());
 }
 
 void Server::handleMessage(omnetpp::cMessage *msg) {
-    InternalElectionTimeout *iet = dynamic_cast<InternalElectionTimeout*>(msg);
-    if (iet != nullptr) {
-        raftServer.maybeElection();
-        scheduleAfter(uniform(startupElectionMinTimeout, startupElectionMaxTimeout),
-                      new InternalElectionTimeout());
-        return;
+    {
+        InternalElectionTimeout *m = dynamic_cast<InternalElectionTimeout*>(msg);
+        if (m != nullptr) {
+            raftServer.maybeElection();
+            scheduleAfter(uniform(startupElectionMinTimeout,
+                                  startupElectionMaxTimeout),
+                          new InternalElectionTimeout());
+            return;
+        }
     }
 
-    InternalHeartbeatTimeout *iht = dynamic_cast<InternalHeartbeatTimeout*>(msg);
-    if (iht != nullptr) {
-        raftServer.maybeHeartbeat();
-        scheduleAfter(heartbeatTimeout, new InternalHeartbeatTimeout());
-        return;
+    {
+        InternalHeartbeatTimeout *m
+            = dynamic_cast<InternalHeartbeatTimeout*>(msg);
+        if (m != nullptr) {
+            raftServer.maybeHeartbeat();
+            scheduleAfter(heartbeatTimeout, new InternalHeartbeatTimeout());
+            return;
+        }
     }
+
+    /************************************************************************/
+
+    {
+        InternalClientRequestTimeout *m
+            = dynamic_cast<InternalClientRequestTimeout*>(msg);
+        if (m != nullptr) {
+            if (raftServer.getRole() == raft::Leader)
+                raftServer.append({});
+            return;
+        }
+    }
+
+    /************************************************************************/
 
     // If it's not an internal event then fire the messageReceived signal
     emit(messageReceivedSignal, 0);
