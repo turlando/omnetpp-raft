@@ -163,10 +163,6 @@ void Server::handleMessage(ServerId from, Message message) {
             updateTerm(msg.term);
             updateHeartbeatTime();
 
-            bool logOk
-                = msg.prevLogIndex == -1 // TODO: encapsulate default? Use optional?
-               || msg.prevLogTerm == log.getTerm(msg.prevLogIndex);
-
             if (msg.term == term) {
                 switch (role) {
                     case Candidate:
