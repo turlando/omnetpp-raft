@@ -7,6 +7,7 @@
 #include "msg/InternalElectionTimeout_m.h"
 #include "msg/InternalHeartbeatTimeout_m.h"
 #include "msg/InternalClientRequestTimeout_m.h"
+#include "msg/InternalNetworkPartitionTimeout_m.h"
 #include "../raft/Server.hpp"
 
 
@@ -14,7 +15,12 @@
 const float startupElectionMinTimeout = 0.15; // 150 ms
 const float startupElectionMaxTimeout = 0.30; // 300 ms
 const float heartbeatTimeout          = 0.05; // 50 ms
-const float clientRequestTimeout      = 0.5;
+
+const float clientRequestTimeout = 0.5;
+
+const float networkShutdownTimeout = 0.6;
+const float networkRestoreTimeout  = 1.0;
+const std::set<int> partitionedServers = {2, 6};
 
 const char *STATE_TO_COLOR[3] = {
     "#00FF00", // follower  = green
@@ -38,6 +44,8 @@ class Server : public omnetpp::cSimpleModule {
         void setColor(const char *color);
         void setText(const char *color);
         void updateDisplay();
+
+        bool networkAvailable = true;
 
         omnetpp::simsignal_t messageReceivedSignal = registerSignal("messageReceived");
         omnetpp::simsignal_t messageSentSignal = registerSignal("messageSent");
@@ -69,9 +77,34 @@ void Server::initialize() {
     scheduleAfter(heartbeatTimeout, new InternalHeartbeatTimeout());
 
     scheduleAt(clientRequestTimeout, new InternalClientRequestTimeout());
+    scheduleAt(networkShutdownTimeout, new InternalNetworkPartitionTimeout());
+    scheduleAt(networkRestoreTimeout, new InternalNetworkPartitionTimeout());
+
 }
 
 void Server::handleMessage(omnetpp::cMessage *msg) {
+    {
+        InternalNetworkPartitionTimeout *m
+            = dynamic_cast<InternalNetworkPartitionTimeout*>(msg);
+        if (m != nullptr) {
+            if (networkAvailable == false) {
+                networkAvailable = true;
+                return;
+            }
+
+            if (partitionedServers.find(getId()) != partitionedServers.end())
+                networkAvailable = false;
+            return;
+        }
+    }
+
+    updateDisplay();
+
+    if (networkAvailable == false)
+        return;
+
+    /************************************************************************/
+
     {
         InternalElectionTimeout *m = dynamic_cast<InternalElectionTimeout*>(msg);
         if (m != nullptr) {
@@ -126,6 +159,9 @@ void Server::setText(const char *text) {
 
 void Server::updateDisplay() {
     setColor(STATE_TO_COLOR[raftServer.getRole()]);
+
+    if (networkAvailable == false)
+        setColor("#808080");
 
     char buffer[512];
 
@@ -188,6 +224,9 @@ omnetpp::cGate *Server::gateForNode(raft::ServerId _id) {
 }
 
 void Server::sendRaftMessageToNode(raft::ServerId id, raft::Message msg) {
+    if (networkAvailable == false)
+        return;
+
     emit(messageSentSignal, 0);
     omnetpp::cMessage *omnetMessage = raftMessageToOmnetMessage(msg);
     omnetpp::cGate    *destGate     = gateForNode(id);

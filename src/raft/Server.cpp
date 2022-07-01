@@ -160,6 +160,7 @@ void Server::handleMessage(ServerId from, Message message) {
         },
 
         [&](AppendEntries& msg) {
+            updateTerm(msg.term);
             updateHeartbeatTime();
 
             bool logOk
