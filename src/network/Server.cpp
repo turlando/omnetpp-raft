@@ -50,7 +50,7 @@ class Server : public omnetpp::cSimpleModule {
             , internalElectionTimeout(new InternalElectionTimeout())
             , raftServer(
                 [&]() { return getTime(); },
-                [&]() { return getIndex(); },
+                [&]() { return getId(); },
                 [&]() { return getServers(); },
                 [&](int id, raft::Message msg) { sendRaftMessageToNode(id, msg); },
                 [&]() { resetElectionTimeout(); }
@@ -87,7 +87,7 @@ void Server::handleMessage(omnetpp::cMessage *msg) {
     emit(messageReceivedSignal, 0);
 
     raft::Message m = omnetMessageToRaftMessage(msg);
-    raftServer.handleMessage(msg->getSenderGate()->getOwnerModule()->getIndex(), m);
+    raftServer.handleMessage(msg->getSenderGate()->getOwnerModule()->getId(), m);
 
     updateDisplay();
 }
@@ -134,22 +134,29 @@ raft::Time Server::getTime() {
 
 raft::Servers Server::getServers() {
     raft::Servers s;
+
     for (omnetpp::cModule::GateIterator i(this); !i.end(); i++) {
-        int nodeId = (*i)->getPathEndGate()->getOwnerModule()->getIndex();
-        if (nodeId != getIndex())
-            s.insert(nodeId);
+        cModule *module = (*i)->getPathEndGate()->getOwnerModule();
+        const char *name = module->getClassName();
+        const int id = module->getId();
+
+        if (strcmp(name, "Server") == 0 && id != getId())
+            s.insert(id);
     }
+
     return s;
 }
 
-omnetpp::cGate *Server::gateForNode(raft::ServerId id) {
-    if (id == getIndex())
+omnetpp::cGate *Server::gateForNode(raft::ServerId _id) {
+    if (_id == getId())
         throw omnetpp::cRuntimeError("Trying to send message to self");
 
     for (omnetpp::cModule::GateIterator i(this); !i.end(); ++i) {
-        int nodeId = (*i)->getPathEndGate()->getOwnerModule()->getIndex();
+        omnetpp::cGate::Type type = (*i)->getType();
+        cModule *module = (*i)->getPathEndGate()->getOwnerModule();
+        const int id = module->getId();
 
-        if ((*i)->getType() == omnetpp::cGate::OUTPUT && id == nodeId)
+        if (type == omnetpp::cGate::OUTPUT && id == _id)
             return *i;
     }
 
